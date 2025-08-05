@@ -1,0 +1,22 @@
+trigger:
+- main  # or your working branch name
+
+pool:
+  name: Default  # Matches your agent pool
+
+steps:
+- script: |
+    echo "Installing JMeter..."
+    choco install jmeter --version=5.6.3 -y
+  displayName: 'Install JMeter via Chocolatey'
+
+- script: |
+    echo "Running JMeter test..."
+    jmeter -n -t testplan.jmx -l results.jtl
+  displayName: 'Run JMeter Test'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/results.jtl'
+    testRunTitle: 'JMeter Performance Test'
+  condition: succeededOrFailed()
