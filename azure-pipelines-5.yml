@@ -1,0 +1,36 @@
+trigger:
+- main
+
+pool:
+  name: Default  # Use your self-hosted agent pool name if different
+
+steps:
+- task: PowerShell@2
+  displayName: "Install Chocolatey"
+  inputs:
+    targetType: 'inline'
+    script: |
+      Set-ExecutionPolicy Bypass -Scope Process -Force
+      [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+      iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      refreshenv
+
+- task: PowerShell@2
+  displayName: "Install JMeter via Chocolatey"
+  inputs:
+    targetType: 'inline'
+    script: |
+      choco install jmeter -y
+      refreshenv
+
+- task: CmdLine@2
+  displayName: "Run JMeter Test Plan"
+  inputs:
+    script: |
+      jmeter -n -t $(Build.SourcesDirectory)/test.jmx -l $(Build.ArtifactStagingDirectory)/results.jtl
+
+- task: PublishBuildArtifacts@1
+  displayName: "Publish JMeter Results"
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/results.jtl'
+    ArtifactName: 'jmeter-results'
