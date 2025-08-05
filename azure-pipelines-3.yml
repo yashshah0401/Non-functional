@@ -1,0 +1,26 @@
+trigger:
+- main  # Or your branch name
+
+pool:
+  name: Default
+  demands:
+    - agent.name -equals YASH  # Match your local agent name
+
+steps:
+- script: |
+    echo Installing Java and downloading JMeter...
+    choco install -y jdk11 wget
+    wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz -OutFile apache-jmeter-5.6.3.tgz
+    tar -xzf apache-jmeter-5.6.3.tgz
+  displayName: 'Install JDK and JMeter'
+
+- script: |
+    echo Running JMeter test plan...
+    .\apache-jmeter-5.6.3\bin\jmeter.bat -n -t testplan.jmx -l results.jtl
+  displayName: 'Run JMeter Test'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/results.jtl'
+    testRunTitle: 'JMeter Performance Test'
+  condition: succeededOrFailed()
