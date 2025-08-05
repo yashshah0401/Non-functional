@@ -1,0 +1,29 @@
+trigger:
+- main
+
+pool:
+  name: Default  # Or your actual agent pool name
+
+steps:
+# ✅ Step 1: Install JMeter only (Chocolatey already installed on agent)
+- task: PowerShell@2
+  displayName: "Install JMeter via Chocolatey"
+  inputs:
+    targetType: 'inline'
+    script: |
+      Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+      choco install jmeter -y
+
+# ✅ Step 2: Run JMeter Test Plan
+- task: CmdLine@2
+  displayName: "Run JMeter Test Plan"
+  inputs:
+    script: |
+      jmeter -n -t $(Build.SourcesDirectory)/test.jmx -l $(Build.ArtifactStagingDirectory)/results.jtl
+
+# ✅ Step 3: Publish Results
+- task: PublishBuildArtifacts@1
+  displayName: "Publish JMeter Results"
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/results.jtl'
+    ArtifactName: 'jmeter-results'
