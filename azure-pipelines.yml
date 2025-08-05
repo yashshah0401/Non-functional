@@ -1,0 +1,34 @@
+trigger:
+- main  # Or replace with your actual branch name
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y openjdk-11-jdk wget
+    wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+    tar -xzf apache-jmeter-5.6.3.tgz
+  displayName: 'Install JMeter'
+
+- script: |
+    ./apache-jmeter-5.6.3/bin/jmeter -n -t testplan.jmx -l results.jtl \
+    -JinfluxdbMetricsSender=org.apache.jmeter.visualizers.backend.influxdb.HttpMetricsSender \
+    -JinfluxdbUrl=http://<PUBLIC_INFLUX_HOST>:8086/api/v2/write?org=Conestoga&bucket=Nonfunctional&precision=ns \
+    -JinfluxdbToken=tMnvqLYANKVlC9gvQAd8X8Rt0r9ND_QGmJd31V2h4zKEUqzAJX7GQSEWP2zjIF5uX4bV1Z3HVARFfRN_WdcgCw== \
+    -Japplication=WalmartFlowTest \
+    -Jmeasurement=jmeter \
+    -JsummaryOnly=false \
+    -JsamplersRegex=.* \
+    -Jpercentiles=99;95;90 \
+    -JtestTitle="Test name" \
+    -JinfluxdbOrg=Nonfunctional \
+    -JinfluxdbBucket=Conestoga
+  displayName: 'Run JMeter Test with InfluxDB'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/results.jtl'
+    testRunTitle: 'JMeter Performance Test'
+  condition: succeededOrFailed()
