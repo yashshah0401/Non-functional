@@ -1,0 +1,23 @@
+trigger:
+- main  # Or replace with your actual branch name
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y openjdk-11-jdk wget
+    wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+    tar -xzf apache-jmeter-5.6.3.tgz
+  displayName: 'Install JMeter'
+
+- script: |
+    ./apache-jmeter-5.6.3/bin/jmeter -n -t testplan.jmx -l results.jtl
+  displayName: 'Run JMeter Test'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/results.jtl'
+    testRunTitle: 'JMeter Performance Test'
+  condition: succeededOrFailed()
